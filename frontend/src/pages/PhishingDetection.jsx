@@ -39,11 +39,11 @@ export default function PhishingDetection({ navigate }) {
     <>
       <div className="page-header">
         <button className="back-link" onClick={() => navigate('dashboard')}>← Back to Dashboard</button>
-        <h2>🔗 Phishing Website Detection</h2>
+        <h2>Phishing Website Detection</h2>
         <p style={{ marginTop: 6 }}>Enter any URL to check for phishing indicators and suspicious patterns.</p>
       </div>
 
-      <div style={{ maxWidth: 640 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px', width: '100%', alignItems: 'start' }}>
         <div className="card">
           <div className="form-group">
             <label className="form-label">Website URL</label>
@@ -69,15 +69,16 @@ export default function PhishingDetection({ navigate }) {
 
           {error && <p className="text-danger text-sm mb-16">{error}</p>}
           <button className="btn btn-primary" onClick={handleDetect} disabled={loading}>
-            {loading ? <><span className="spinner" /> Analyzing…</> : '🔍 Check URL'}
+            {loading ? <><span className="spinner" /> Analyzing…</> : 'Check URL'}
           </button>
         </div>
 
-        {result && (
-          <div className="result-card card mt-16">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+          {result && (
+            <div className="result-card card">
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 }}>
               <span className={`result-badge ${isPhishing ? 'phishing' : 'safe'}`}>
-                {isPhishing ? '🚨 Phishing Detected' : '✅ Safe URL'}
+                {isPhishing ? 'Phishing Detected' : 'Safe URL'}
               </span>
               <span className="text-muted text-sm">Confidence: <strong style={{ color: isPhishing ? 'var(--danger)' : 'var(--success)' }}>{result.confidence}%</strong></span>
             </div>
@@ -109,11 +110,12 @@ export default function PhishingDetection({ navigate }) {
             <div className="result-divider" />
             <p className="text-muted text-sm">
               {isPhishing
-                ? '⚠️ Do NOT visit this URL. It shows multiple signs of a phishing or malicious website.'
-                : '✅ This URL appears to be safe based on our analysis. Always verify before entering credentials.'}
+                ? 'Do NOT visit this URL. It shows multiple signs of a phishing or malicious website.'
+                : 'This URL appears to be safe based on our analysis. Always verify before entering credentials.'}
             </p>
-          </div>
-        )}
+            </div>
+          )}
+        </div>
       </div>
     </>
   )

@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors    = require('cors');
 const https   = require('https');
+const { spawn } = require('child_process');
+const path    = require('path');
 
 const app        = express();
 const PORT       = process.env.PORT || 5000;
@@ -151,66 +153,34 @@ function scrapeViaMobileAPI(username) {
   });
 }
 
-// ─────────────────────────────────────────────
-//  Fake-profile ML logic (heuristic model)
-// ─────────────────────────────────────────────
-function predictFakeProfile({ followers, following, bio, hasProfilePic, isVerified, postsCount }) {
-  const f  = Number(followers);
-  const fg = Number(following);
-  const reasons = [];
-  let score = 0;
+// Helper for Python ML model feature mapping
+function calculateMLFeatures({ username, followers, following, bio, hasProfilePic, postsCount }) {
+  const f = Number(followers) || 0;
+  const fg = Number(following) || 0;
+  const uname = username || '';
 
-  if (isVerified) {
-    return { prediction: 'Real Account', confidence: 5, reasons: ['Account is verified by Instagram ✓'] };
-  }
+  // 11 features expected by the random_forest.pkl model:
+  const profile_pic = hasProfilePic ? 1 : 0;
+  
+  const digitMatch = uname.match(/\d/g);
+  const digitsInUsername = digitMatch ? digitMatch.length : 0;
+  const ratio_numlen_username = uname.length > 0 ? digitsInUsername / uname.length : 0;
+  
+  const len_fullname = 0; // Not available in current simplified frontend payload, default to 0
+  const ratio_numlen_fullname = 0;
+  const len_desc = bio ? bio.length : 0;
+  const extern_url = bio && bio.includes('http') ? 1 : 0; // simplistic check
+  const private_acc = 0; // default to public as scraper only gets public
+  const num_posts = postsCount === null || isNaN(postsCount) ? 0 : Number(postsCount);
+  const num_followers = f;
+  const num_following = fg;
+  const followers_following_ratio = fg > 0 ? f / fg : 0;
 
-  const ratio = fg > 0 ? f / fg : 0;
-  if (ratio < 0.1 && f < 100) {
-    score += 30;
-    reasons.push('Very low follower-to-following ratio (typical of bot accounts)');
-  } else if (ratio < 0.5 && f < 500) {
-    score += 15;
-    reasons.push('Low follower-to-following ratio compared to average users');
-  }
-
-  if (!hasProfilePic) {
-    score += 25;
-    reasons.push('No profile picture detected (common trait of fake accounts)');
-  }
-
-  const spamKeywords = ['click', 'link', 'dm', 'follow back', 'f4f', 'gain', 'free', 'win', 'giveaway', 'promo'];
-  if (!bio || bio.trim().length === 0) {
-    score += 20;
-    reasons.push('Empty bio — real users typically write something about themselves');
-  } else {
-    const hits = spamKeywords.filter(kw => bio.toLowerCase().includes(kw));
-    if (hits.length >= 2) {
-      score += 20;
-      reasons.push(`Suspicious bio keywords detected: ${hits.join(', ')}`);
-    }
-  }
-
-  if (fg > 2000 && f < 200) {
-    score += 15;
-    reasons.push('Following too many accounts relative to followers — mass-follow tactic');
-  }
-
-  if (f < 20) {
-    score += 10;
-    reasons.push('Extremely low follower count suggests a newly created or inactive account');
-  }
-
-  if (postsCount !== null && postsCount === 0) {
-    score += 10;
-    reasons.push('No posts published — inactive or placeholder account');
-  }
-
-  const confidence = Math.min(score, 97);
-  return {
-    prediction: confidence >= 45 ? 'Fake Account' : 'Real Account',
-    confidence,
-    reasons: reasons.slice(0, 3),
-  };
+  return [
+    profile_pic, ratio_numlen_username, len_fullname, ratio_numlen_fullname,
+    len_desc, extern_url, private_acc, num_posts, num_followers, num_following,
+    followers_following_ratio
+  ];
 }
 
 // ─────────────────────────────────────────────
@@ -283,8 +253,40 @@ app.post('/predict-fake-profile', (req, res) => {
   if (followers === undefined || following === undefined) {
     return res.status(400).json({ error: 'followers and following are required' });
   }
-  const result = predictFakeProfile({ followers, following, bio, hasProfilePic, isVerified, postsCount });
-  res.json({ ...result, username });
+
+  if (isVerified) {
+    return res.json({ 
+      prediction: 'Real Account', 
+      confidence: 99, 
+      reasons: ['Account is verified by Instagram ✓'],
+      username 
+    });
+  }
+
+  const args = calculateMLFeatures({ username, followers, following, bio, hasProfilePic, postsCount });
+  const scriptPath = path.join(__dirname, 'major', 'predict.py');
+  
+  const pythonProcess = spawn('python', [scriptPath, ...args.map(String)]);
+
+  let output = '';
+  pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+  
+  pythonProcess.on('close', (code) => {
+    try {
+      const mlResult = JSON.parse(output);
+      if (mlResult.error) throw new Error(mlResult.error);
+      
+      res.json({
+        prediction: mlResult.isFake ? 'Fake Account' : 'Real Account',
+        confidence: mlResult.confidence,
+        reasons: ['Analyzed using trained Random Forest ML Model', 'Checked 11 exact historical profile features'],
+        username
+      });
+    } catch (e) {
+      console.error('[ML Error]', e.message, output);
+      res.json({ prediction: 'Unknown', confidence: 0, reasons: ['ML Execution failed: check python setup'], username });
+    }
+  });
 });
 
 // ─────────────────────────────────────────────

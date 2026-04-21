@@ -76,11 +76,11 @@ export default function PasswordGenerator({ navigate }) {
     <>
       <div className="page-header">
         <button className="back-link" onClick={() => navigate('dashboard')}>← Back to Dashboard</button>
-        <h2>🔐 Password Generator</h2>
+        <h2>Password Generator</h2>
         <p style={{ marginTop: 6 }}>Generate cryptographically secure passwords using your browser's built-in crypto API.</p>
       </div>
 
-      <div style={{ maxWidth: 560 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px', width: '100%', alignItems: 'start' }}>
         <div className="card">
           {/* Length slider */}
           <div className="form-group">
@@ -122,17 +122,20 @@ export default function PasswordGenerator({ navigate }) {
             </div>
           </div>
 
-          <button className="btn btn-primary full-width" onClick={generate} style={{ marginBottom: 20 }}>
-            ⚡ Generate Password
+          <button className="btn btn-primary full-width" onClick={generate}>
+            Generate Password
           </button>
+        </div>
 
+        {/* Right Column */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Password display */}
           {password && (
-            <>
+            <div className="card result-card" style={{ borderColor: strength.color || 'var(--border)' }}>
               <div className="password-display">
                 <span style={{ flex: 1, wordBreak: 'break-all' }}>{password}</span>
                 <button className="copy-btn" onClick={copyToClipboard} title="Copy">
-                  {copied ? '✅' : '📋'}
+                  {copied ? 'Copied' : 'Copy'}
                 </button>
               </div>
 
@@ -156,19 +159,19 @@ export default function PasswordGenerator({ navigate }) {
               </div>
 
               {copied && (
-                <p className="text-success text-sm mt-8">✅ Copied to clipboard!</p>
+                <p className="text-success text-sm mt-8">Copied to clipboard!</p>
               )}
-            </>
+            </div>
           )}
-        </div>
 
-        <div className="card mt-16">
-          <p className="section-heading">Security Tips</p>
-          <ul className="reasons-list mt-8">
-            <li>Use a unique password for every account — never reuse passwords</li>
-            <li>Store passwords in a reputable password manager (e.g., Bitwarden, 1Password)</li>
-            <li>Enable two-factor authentication (2FA) wherever possible</li>
-          </ul>
+          <div className="card">
+            <p className="section-heading">Security Tips</p>
+            <ul className="reasons-list mt-8">
+              <li>Use a unique password for every account — never reuse passwords</li>
+              <li>Store passwords in a reputable password manager (e.g., Bitwarden, 1Password)</li>
+              <li>Enable two-factor authentication (2FA) wherever possible</li>
+            </ul>
+          </div>
         </div>
       </div>
     </>

@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react'
 import Dashboard from './pages/Dashboard'
 import FakeProfileDetection from './pages/FakeProfileDetection'
-import SpamDetection from './pages/SpamDetection'
+import AIDetection from './pages/AIDetection'
 import PhishingDetection from './pages/PhishingDetection'
 import PasswordGenerator from './pages/PasswordGenerator'
 import Navbar from './components/Navbar'
+import Sidebar from './components/Sidebar'
 
 const PAGES = {
   dashboard: Dashboard,
   'fake-profile': FakeProfileDetection,
-  spam: SpamDetection,
+  'ai-content': AIDetection,
   phishing: PhishingDetection,
   password: PasswordGenerator,
 }
@@ -33,16 +34,21 @@ export default function App() {
   const PageComponent = PAGES[page] || Dashboard
 
   return (
-    <>
+    <div className="app-root">
       <Navbar theme={theme} toggleTheme={toggleTheme} onHome={() => navigate('dashboard')} />
-      <main>
-        <div className="container page-enter" key={page}>
-          <PageComponent navigate={navigate} />
+      <div className="layout-wrapper">
+        {page !== 'dashboard' && <Sidebar page={page} navigate={navigate} />}
+        <div className="layout-content">
+          <main>
+            <div className="container page-enter" key={page}>
+              <PageComponent navigate={navigate} />
+            </div>
+          </main>
+          <footer className="footer">
+            CyberShield AI &mdash; Built for security research &amp; demonstration
+          </footer>
         </div>
-      </main>
-      <footer className="footer">
-        CyberShield AI &mdash; Built for security research &amp; demonstration
-      </footer>
-    </>
+      </div>
+    </div>
   )
 }
