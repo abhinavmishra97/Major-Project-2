@@ -41,8 +41,7 @@ export default function Dashboard({ navigate }) {
         </div>
         <h1>Detect. Protect. Secure.</h1>
         <p className="hero-subtitle">
-          A suite of intelligent tools for identifying online threats — fake social profiles,
-          phishing URLs, spam messages, and weak credentials — all in one place.
+          A suite of intelligent modules built to proactively identify online threats. Detect fake social profiles, analyze AI-generated content, scan phishing URLs, and secure your credentials.
         </p>
       </div>
 

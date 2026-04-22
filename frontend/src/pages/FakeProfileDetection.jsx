@@ -95,6 +95,18 @@ export default function FakeProfileDetection({ navigate }) {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
 
+  React.useEffect(() => {
+    const handleLoadHistory = (e) => {
+      const { profileData, resultData } = e.detail;
+      setProfile(profileData);
+      setResult(resultData);
+      setStep(STEPS.RESULT);
+      setUrl(profileData.username || profileData.url || '');
+    };
+    window.addEventListener('load-history-result', handleLoadHistory);
+    return () => window.removeEventListener('load-history-result', handleLoadHistory);
+  }, []);
+
   // ── Step 1: Analyze URL ──────────────────────────────────────────────
   const handleAnalyze = async () => {
     if (!url.trim()) return setError('Please enter an Instagram profile URL')
@@ -144,6 +156,21 @@ export default function FakeProfileDetection({ navigate }) {
       if (!res.ok) throw new Error(data.error)
       setProfile(profileData)
       setResult(data)
+
+      try {
+        const historyItem = {
+          url: profileData.username || profileData.url || 'Unknown Profile',
+          isFake: data.prediction && data.prediction.includes('Fake'),
+          timestamp: Date.now(),
+          profileData: profileData,
+          resultData: data
+        }
+        const hist = JSON.parse(localStorage.getItem('fakeProfileHistory') || '[]')
+        localStorage.setItem('fakeProfileHistory', JSON.stringify([historyItem, ...hist].slice(0, 30)))
+        window.dispatchEvent(new Event('history-updated'))
+      } catch (e) {
+        console.error('History save error', e)
+      }
       setStep(STEPS.RESULT)
     } catch (err) {
       setError(err.message || 'Prediction failed')
@@ -179,10 +206,12 @@ export default function FakeProfileDetection({ navigate }) {
 
   return (
     <>
-      <div className="page-header">
-        <button className="back-link" onClick={() => navigate('dashboard')}>← Back to Dashboard</button>
-        <h2>Fake Profile Detection</h2>
-        <p style={{ marginTop: 6 }}>Analyze an Instagram profile URL to detect signs of a fake or bot account.</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>Fake Profile Detection</h2>
+          <p style={{ marginTop: 6, marginBottom: 0 }}>Analyze an Instagram profile URL to detect signs of a fake or bot account.</p>
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={() => navigate('dashboard')} style={{ background: 'var(--surface)' }}>← Back</button>
       </div>
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(380px, 1fr))', gap: '24px', width: '100%', alignItems: 'start' }}>

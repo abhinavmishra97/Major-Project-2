@@ -12,7 +12,7 @@ export default function Navbar({ theme, toggleTheme, onHome }) {
           style={{ background: 'none', border: 'none', cursor: 'pointer' }}
         >
           <span className="brand-icon" style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, background: 'var(--text-primary)', color: 'var(--bg)', borderRadius: '50%', fontSize: '0.8rem', fontWeight: 'bold' }}>C</span>
-          <span>CyberShield AI</span>
+          <span>CyberShield</span>
         </button>
         <div className="navbar-right">
           <button 

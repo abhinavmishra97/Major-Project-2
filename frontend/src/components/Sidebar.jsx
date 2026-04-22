@@ -13,8 +13,9 @@ export default function Sidebar({ page, navigate }) {
 
   return (
     <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <button className="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)} title="Toggle Sidebar">
+      <div className="sidebar-header" style={{ justifyContent: collapsed ? 'center' : 'space-between', alignItems: 'center' }}>
+        {!collapsed && <span style={{ fontWeight: 600, fontSize: '0.875rem', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Tools</span>}
+        <button className="sidebar-collapse-btn" onClick={() => setCollapsed(!collapsed)} title="Toggle Sidebar" style={{ width: 24, height: 24, padding: 0, fontSize: '0.8rem' }}>
           {collapsed ? '→' : '←'}
         </button>
       </div>
@@ -27,7 +28,7 @@ export default function Sidebar({ page, navigate }) {
             onClick={() => navigate(item.id)}
             title={collapsed ? item.label : ''}
           >
-            {!collapsed && <span className="sidebar-label" style={{ paddingLeft: 8 }}>{item.label}</span>}
+            {!collapsed && <span className="sidebar-label">{item.label}</span>}
             {collapsed && <span className="sidebar-label" style={{ fontSize: '0.75rem', fontWeight: 600 }}>{item.label.substring(0, 3).toUpperCase()}</span>}
           </button>
         ))}

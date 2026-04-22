@@ -62,10 +62,12 @@ export default function AIDetection({ navigate }) {
 
   return (
     <>
-      <div className="page-header">
-        <button className="back-link" onClick={() => navigate('dashboard')}>← Back to Dashboard</button>
-        <h2>AI Content Detection</h2>
-        <p style={{ marginTop: 6 }}>Detect AI-generated essays, emails, completely synthesized images, or deepfakes using neural network artifacts.</p>
+      <div className="page-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div>
+          <h2 style={{ margin: 0 }}>AI Content Detection</h2>
+          <p style={{ marginTop: 6, marginBottom: 0 }}>Scan text for linguistic anomalies and evaluate images for generative deepfake artifacts.</p>
+        </div>
+        <button className="btn btn-outline btn-sm" onClick={() => navigate('dashboard')} style={{ background: 'var(--surface)' }}>← Back</button>
       </div>
 
       {/* Tabs */}

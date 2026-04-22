@@ -6,6 +6,7 @@ import PhishingDetection from './pages/PhishingDetection'
 import PasswordGenerator from './pages/PasswordGenerator'
 import Navbar from './components/Navbar'
 import Sidebar from './components/Sidebar'
+import HistorySidebar from './components/HistorySidebar'
 
 const PAGES = {
   dashboard: Dashboard,
@@ -45,9 +46,10 @@ export default function App() {
             </div>
           </main>
           <footer className="footer">
-            CyberShield AI &mdash; Built for security research &amp; demonstration
+            CyberShield • Built for security research &amp; demonstration
           </footer>
         </div>
+        {page === 'fake-profile' && <HistorySidebar />}
       </div>
     </div>
   )
