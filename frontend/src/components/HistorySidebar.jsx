@@ -1,12 +1,17 @@
 import React, { useState, useEffect } from 'react'
 
-export default function HistorySidebar() {
+export default function HistorySidebar({ 
+  storageKey = 'fakeProfileHistory', 
+  eventName = 'history-updated',
+  emptyText = 'No items scanned yet.',
+  type = 'profile'
+}) {
   const [history, setHistory] = useState([])
   const [collapsed, setCollapsed] = useState(false)
 
   const loadHistory = () => {
     try {
-      const hist = JSON.parse(localStorage.getItem('fakeProfileHistory') || '[]')
+      const hist = JSON.parse(localStorage.getItem(storageKey) || '[]')
       setHistory(hist)
     } catch {
       setHistory([])
@@ -15,12 +20,12 @@ export default function HistorySidebar() {
 
   useEffect(() => {
     loadHistory()
-    window.addEventListener('history-updated', loadHistory)
-    return () => window.removeEventListener('history-updated', loadHistory)
-  }, [])
+    window.addEventListener(eventName, loadHistory)
+    return () => window.removeEventListener(eventName, loadHistory)
+  }, [storageKey, eventName])
 
   const clearHistory = () => {
-    localStorage.removeItem('fakeProfileHistory')
+    localStorage.removeItem(storageKey)
     setHistory([])
   }
 
@@ -46,13 +51,15 @@ export default function HistorySidebar() {
 
       <div className="sidebar-nav" style={{ overflowY: 'auto' }}>
         {history.length === 0 ? (
-          !collapsed && <p className="text-muted text-xs" style={{ textAlign: 'center', padding: '24px 12px' }}>No profiles scanned yet.</p>
+          !collapsed && <p className="text-muted text-xs" style={{ textAlign: 'center', padding: '24px 12px' }}>{emptyText}</p>
         ) : (
           history.map((item, index) => (
             <div key={index} 
               onClick={() => {
-                if (item.profileData && item.resultData) {
+                if (type === 'profile' && item.profileData && item.resultData) {
                   window.dispatchEvent(new CustomEvent('load-history-result', { detail: item }))
+                } else if (type === 'phishing' && item.result) {
+                  window.dispatchEvent(new CustomEvent('load-phishing-result', { detail: item }))
                 }
               }}
               style={{
@@ -72,8 +79,8 @@ export default function HistorySidebar() {
                     {item.url}
                   </span>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className={`chip mt-8 ${item.isFake ? 'fake' : 'real'}`} style={{ margin: 0, padding: '2px 6px', fontSize: '0.65rem' }}>
-                      {item.isFake ? 'Fake' : 'Real'}
+                    <span className={`chip mt-8 ${item.isFake || item.isPhishing ? 'fake' : 'real'}`} style={{ margin: 0, padding: '2px 6px', fontSize: '0.65rem' }}>
+                      {type === 'profile' ? (item.isFake ? 'Fake' : 'Real') : (item.isPhishing ? 'Phishing' : 'Safe')}
                     </span>
                     <span className="text-muted" style={{ fontSize: '0.65rem' }}>
                       {new Date(item.timestamp).toLocaleDateString()}
@@ -82,7 +89,7 @@ export default function HistorySidebar() {
                 </>
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'center' }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: item.isFake ? 'var(--danger)' : 'var(--success)' }} title={item.url} />
+                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: (item.isFake || item.isPhishing) ? 'var(--danger)' : 'var(--success)' }} title={item.url} />
                 </div>
               )}
             </div>

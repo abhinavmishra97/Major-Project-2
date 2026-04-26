@@ -49,7 +49,8 @@ export default function App() {
             CyberShield • Built for security research &amp; demonstration
           </footer>
         </div>
-        {page === 'fake-profile' && <HistorySidebar />}
+        {page === 'fake-profile' && <HistorySidebar type="profile" storageKey="fakeProfileHistory" eventName="history-updated" emptyText="No profiles scanned yet." />}
+        {page === 'phishing' && <HistorySidebar type="phishing" storageKey="phishingHistory" eventName="phishing-history-updated" emptyText="No URLs scanned yet." />}
       </div>
     </div>
   )

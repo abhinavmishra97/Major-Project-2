@@ -324,29 +324,36 @@ app.post('/detect-phishing', (req, res) => {
   const { url } = req.body;
   if (!url) return res.status(400).json({ error: 'URL is required' });
 
-  const phishingIndicators = [
-    { pattern: /[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}/, label: 'IP address used instead of domain name' },
-    { pattern: /paypal|amazon|apple|microsoft|google|facebook|instagram|netflix|bank/i, label: 'Brand name in suspicious URL' },
-    { pattern: /login|signin|verify|account|secure|update|confirm/i, label: 'Suspicious authentication keyword in URL' },
-    { pattern: /\.tk$|\.ml$|\.ga$|\.cf$|\.gq$/i, label: 'Free/suspicious TLD detected' },
-    { pattern: /https?:\/\/(?!www\.)[^/]{30,}/, label: 'Unusually long subdomain or hostname' },
-    { pattern: /--/, label: 'Double hyphens detected in domain' },
-    { pattern: /@/, label: '@ symbol used in URL (redirection trick)' },
-    { pattern: /bit\.ly|tinyurl|goo\.gl|t\.co|ow\.ly/i, label: 'URL shortener detected' },
-  ];
-
-  const flags = phishingIndicators.filter(ind => ind.pattern.test(url));
-  const isPhishing = flags.length >= 2;
-  const confidence = Math.min(flags.length * 20 + 40, 97);
-
   let domain = '';
   try { domain = new URL(url).hostname; } catch { domain = url; }
 
-  res.json({
-    prediction: isPhishing ? 'Phishing' : 'Safe',
-    confidence: isPhishing ? confidence : Math.max(100 - confidence, 75),
-    flags: flags.map(f => f.label).slice(0, 4),
-    domain,
+  const scriptPath = path.join(__dirname, 'major', 'predict_phishing.py');
+  const pythonProcess = spawn('python', [scriptPath, url]);
+
+  let output = '';
+  pythonProcess.stdout.on('data', (data) => { output += data.toString(); });
+  
+  pythonProcess.on('close', (code) => {
+    try {
+      const mlResult = JSON.parse(output);
+      if (mlResult.error) throw new Error(mlResult.error);
+      
+      res.json({
+        prediction: mlResult.isPhishing ? 'Phishing' : 'Safe',
+        confidence: mlResult.confidence,
+        flags: mlResult.flags || [],
+        domain
+      });
+    } catch (e) {
+      console.error('[ML Error - Phishing]', e.message, output);
+      // Fallback
+      res.json({ 
+        prediction: 'Unknown', 
+        confidence: 0, 
+        flags: ['ML Algorithm failed to execute', 'Check Python dependencies (joblib, numpy)'],
+        domain 
+      });
+    }
   });
 });
 
